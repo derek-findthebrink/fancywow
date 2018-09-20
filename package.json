@@ -1,0 +1,55 @@
+{
+  "name": "fancywow",
+  "description": "integrate your tasks and pull requests",
+  "version": "0.0.0",
+  "author": "Derek @derek-findthebrink",
+  "bin": {
+    "fancywow": "./bin/run"
+  },
+  "bugs": "https://github.com/derek-findthebrink/fancywow/issues",
+  "dependencies": {
+    "@oclif/command": "^1",
+    "@oclif/config": "^1",
+    "@oclif/plugin-help": "^2"
+  },
+  "devDependencies": {
+    "@oclif/dev-cli": "^1",
+    "@oclif/test": "^1",
+    "chai": "^4",
+    "eslint": "^5.5",
+    "eslint-config-oclif": "^3.1",
+    "globby": "^8",
+    "mocha": "^5",
+    "nyc": "^13"
+  },
+  "engines": {
+    "node": ">=8.0.0"
+  },
+  "files": [
+    "/bin",
+    "/npm-shrinkwrap.json",
+    "/oclif.manifest.json",
+    "/src"
+  ],
+  "homepage": "https://github.com/derek-findthebrink/fancywow",
+  "keywords": [
+    "oclif"
+  ],
+  "license": "MIT",
+  "main": "src/index.js",
+  "oclif": {
+    "commands": "./src/commands",
+    "bin": "fancywow",
+    "plugins": [
+      "@oclif/plugin-help"
+    ]
+  },
+  "repository": "derek-findthebrink/fancywow",
+  "scripts": {
+    "postpack": "rm -f oclif.manifest.json npm-shrinkwrap.json",
+    "posttest": "eslint .",
+    "prepack": "oclif-dev manifest && oclif-dev readme && npm shrinkwrap",
+    "test": "nyc mocha --forbid-only \"test/**/*.test.js\"",
+    "version": "oclif-dev readme && git add README.md"
+  }
+}
