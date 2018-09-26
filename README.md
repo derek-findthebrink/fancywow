@@ -30,21 +30,19 @@ USAGE
 <!-- commands -->
 * [`fancywow hello`](#fancywow-hello)
 * [`fancywow help [COMMAND]`](#fancywow-help-command)
+* [`fancywow init`](#fancywow-init)
 
 ## `fancywow hello`
 
-Describe the command here
+Want to say hi?
 
 ```
 USAGE
   $ fancywow hello
 
-OPTIONS
-  -n, --name=name  name to print
-
 DESCRIPTION
   ...
-  Extra documentation goes here
+  Why not say hi to get started!
 ```
 
 _See code: [src/commands/hello.js](https://github.com/derek-findthebrink/fancywow/blob/v0.0.0/src/commands/hello.js)_
@@ -65,4 +63,22 @@ OPTIONS
 ```
 
 _See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v2.1.2/src/commands/help.ts)_
+
+## `fancywow init`
+
+Describe the command here
+
+```
+USAGE
+  $ fancywow init
+
+OPTIONS
+  -n, --name=name  name to print
+
+DESCRIPTION
+  ...
+  Extra documentation goes here
+```
+
+_See code: [src/commands/init.js](https://github.com/derek-findthebrink/fancywow/blob/v0.0.0/src/commands/init.js)_
 <!-- commandsstop -->

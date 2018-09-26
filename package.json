@@ -10,7 +10,11 @@
   "dependencies": {
     "@oclif/command": "^1",
     "@oclif/config": "^1",
-    "@oclif/plugin-help": "^2"
+    "@oclif/plugin-help": "^2",
+    "asana": "^0.16.1",
+    "configstore": "^4.0.0",
+    "inquirer": "^6.2.0",
+    "lodash": "^4.17.11"
   },
   "devDependencies": {
     "@oclif/dev-cli": "^1",
@@ -20,6 +24,7 @@
     "eslint-config-oclif": "^3.1",
     "globby": "^8",
     "mocha": "^5",
+    "nodemon": "^1.18.4",
     "nyc": "^13"
   },
   "engines": {
@@ -46,6 +51,7 @@
   },
   "repository": "derek-findthebrink/fancywow",
   "scripts": {
+    "debug": "nodemon --inspect-brk src/index.js",
     "postpack": "rm -f oclif.manifest.json npm-shrinkwrap.json",
     "posttest": "eslint .",
     "prepack": "oclif-dev manifest && oclif-dev readme && npm shrinkwrap",
