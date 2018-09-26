@@ -1,4 +1,4 @@
-const {Command} = require('@oclif/command')
+const { Command } = require('@oclif/command')
 
 class HelloCommand extends Command {
   async run() {
