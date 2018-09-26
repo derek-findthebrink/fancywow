@@ -1,7 +1,4 @@
-const {
-  Command,
-} = require('@oclif/command')
-
+const { Command } = require('@oclif/command')
 const inquirer = require('inquirer')
 const asana = require('asana')
 
@@ -9,21 +6,21 @@ const config = require('../utils/config')
 
 
 // accessors
-const tokenPath                 = 'clients.asana.access-token'
-const userPath                  = 'clients.asana.user'
-const workspaceOrganizationPath = 'clients.asana.workspace'
-const teamPath                  = 'clients.asana.team'
-const projectPath               = 'clients.asana.project'
+const pathToken                 = 'clients.asana.access-token'
+const pathUser                  = 'clients.asana.user'
+const pathWorkspaceOrganization = 'clients.asana.workspace'
+const pathTeam                  = 'clients.asana.team'
+const pathProject               = 'clients.asana.project'
 
 
 // helpers
 const createAsanaClient = () => {
-  const token = config.get(tokenPath)
+  const token = config.get(pathToken)
   return asana.Client.create()
     .useAccessToken(token)
 }
 
-const promptOverwriteIfSet = (path) => {
+const inquirePromptOverwriteIfSet = (path) => {
   if (!config.has(path)) {
     return Promise.resolve(true)
   }
@@ -44,13 +41,13 @@ const sortObjectsByName = (col) =>
 // questions
 // -------------------------------------------------------
 const promptAsanaToken = {
-  name: 'asanaToken',
+  name: 'clientAsanaToken',
   type: 'input',
   message: 'What is your asana personal token?',
 }
 
 const promptWorkspace = {
-  name: 'asanaWorkspace',
+  name: 'clientAsanaWorkspace',
   type: 'list',
   message: 'Which workspace do you want to use?',
   choices: () => {
@@ -60,7 +57,8 @@ const promptWorkspace = {
     // request all workspaces
     return client.workspaces.findAll()
       .then((workspaces) => {
-        return workspaces.data.map((ws) => ({ name: ws.name, value: ws.id }))
+        return sortObjectsByName(workspaces.data)
+          .map((ws) => ({ name: ws.name, value: ws.id }))
       })
       .catch((error) => {
         throw error
@@ -69,7 +67,7 @@ const promptWorkspace = {
 }
 
 const promptTeam = {
-  name: 'asanaTeam',
+  name: 'clientAsanaTeam',
   type: 'list',
   message: 'Which team would you like to use?',
   choices: () => {
@@ -78,7 +76,7 @@ const promptTeam = {
 
     // request all workspaces
     // TODO: ensure that workspace is organization at this point
-    return client.teams.findByOrganization(config.get(workspaceOrganizationPath))
+    return client.teams.findByOrganization(config.get(pathWorkspaceOrganization))
       .then((teams) =>
         sortObjectsByName(teams.data)
           .map((ws) => ({ name: ws.name, value: ws.id }))
@@ -90,15 +88,15 @@ const promptTeam = {
 }
 
 const promptProject = {
-  name: 'asanaProject',
+  name: 'clientAsanaProject',
   type: 'list',
   message: 'Which project would you like to use?',
   choices: () => {
     const client = createAsanaClient()
 
     const params = {
-      workspace: config.get(workspaceOrganizationPath),
-      team: config.get(teamPath),
+      workspace: config.get(pathWorkspaceOrganization),
+      team: config.get(pathTeam),
     }
 
     // request all projects
@@ -110,68 +108,82 @@ const promptProject = {
   },
 }
 
+const createNormalizedConfigStructure = (path, prompt) => ({ path, prompt })
+
+const pathClientType = 'clients.type'
+
+const promptClientType = {
+  name: 'clientType',
+  type: 'list',
+  message: 'Which client would you like to use?',
+  choices: [
+    'asana',
+  ],
+}
+
+const configPrompts = {
+  clientType: createNormalizedConfigStructure(pathClientType, promptClientType),
+  token: createNormalizedConfigStructure(pathToken, promptAsanaToken),
+  workspace: createNormalizedConfigStructure(pathWorkspaceOrganization, promptWorkspace),
+  team: createNormalizedConfigStructure(pathTeam, promptTeam),
+  project: createNormalizedConfigStructure(pathProject, promptProject),
+}
+
+const requestValue = async ({ path, prompt }) => {
+  try {
+    const doIt = await inquirePromptOverwriteIfSet(path)
+    if (doIt) {
+      // set name to predictable outcome
+      prompt.name = 'answer'
+      return await inquirer.prompt([ prompt ])
+        .then(({ answer }) => answer)
+    }
+    return await Promise.resolve(config.get(path))
+  } catch (error) {
+    throw error
+  }
+}
+
+const writeRequestedValue = async (promptPathObject) => {
+  try {
+    const value = await requestValue(promptPathObject)
+    config.set(promptPathObject.path, value)
+    return value
+  } catch (error) {
+    throw error
+  }
+}
+
+const isDifferentFromConfig = (path, value) => config.get(path) !== value
+
 
 // command
 // --------------------------------------------------------
 class InitCommand extends Command {
   async run() {
     try {
-      // set access token
-      if (await promptOverwriteIfSet(tokenPath)) {
-        const authToken = await this.getAuthToken()
-        config.set(tokenPath, authToken)
+      // Prompt client type
+      await writeRequestedValue(configPrompts.clientType)
+
+      // the following is asana-specific
+      const token = await writeRequestedValue(configPrompts.token)
+
+      // write the user based on the incoming asana token
+      if (isDifferentFromConfig(pathToken, token)) {
+        const user = await createAsanaClient()
+          .projects.users.me()
+          .then(u => u.id)
+        config.set(pathUser, user)
       }
 
-      // set user (from access token, just get the id)
-      const client = createAsanaClient()
-      const userId = await client.users.me()
-        .then((user) => user.id)
-      config.set(userPath, userId)
-
-      // set workspace
-      if (await promptOverwriteIfSet(workspaceOrganizationPath)) {
-        const workspace = await this.getWorkspace()
-        config.set(workspaceOrganizationPath, workspace)
-      }
-
-      // set team
-      if (await promptOverwriteIfSet(teamPath)) {
-        const team = await this.getTeam()
-        config.set(teamPath, team)
-      }
-
-      // set project
-      if (await promptOverwriteIfSet(projectPath)) {
-        const project = await this.getProject()
-        config.set(projectPath, project)
-      }
-
-      // set project
+      await writeRequestedValue(configPrompts.workspace)
+      await writeRequestedValue(configPrompts.team)
+      await writeRequestedValue(configPrompts.project)
     } catch (error) {
       this.error(error, { exit: 1 })
     } finally {
       this.log(config.all)
     }
-  }
-
-  getAuthToken() {
-    return inquirer.prompt([ promptAsanaToken ])
-      .then(answers => answers[promptAsanaToken.name])
-  }
-
-  getWorkspace() {
-    return inquirer.prompt([ promptWorkspace ])
-      .then((answers) => answers.asanaWorkspace)
-  }
-
-  getTeam() {
-    return inquirer.prompt([ promptTeam ])
-      .then((answers) => answers.asanaTeam)
-  }
-
-  getProject() {
-    return inquirer.prompt([ promptProject ])
-      .then((answers) => answers.asanaProject)
   }
 }
 
@@ -180,8 +192,6 @@ InitCommand.description = `Initialize fancywow
 Set your task provider credentials and project!
 `
 
-InitCommand.flags = {
-  // name: flags.string({char: 'n', description: 'name to print'}),
-}
+InitCommand.flags = {}
 
 module.exports = InitCommand

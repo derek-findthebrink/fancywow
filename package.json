@@ -51,7 +51,6 @@
   },
   "repository": "derek-findthebrink/fancywow",
   "scripts": {
-    "debug": "nodemon --inspect-brk src/index.js",
     "postpack": "rm -f oclif.manifest.json npm-shrinkwrap.json",
     "posttest": "eslint .",
     "prepack": "oclif-dev manifest && oclif-dev readme && npm shrinkwrap",
