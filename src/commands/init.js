@@ -1,25 +1,28 @@
 const { Command } = require('@oclif/command')
 const inquirer = require('inquirer')
-const asana = require('asana')
+const prettyjson = require('prettyjson')
+
+const {
+  createClient: createAsanaClient,
+  pathToken,
+  pathProject,
+  pathUser,
+  pathWorkspaceOrganization,
+  pathTeam,
+  pathSectionToDo,
+  pathSectionInProgress,
+  pathSectionReadyForProduction,
+  pathSectionDone,
+} = require('../clients/asana')
 
 const config = require('../utils/config')
 
 
-// accessors
-const pathToken                 = 'clients.asana.access-token'
-const pathUser                  = 'clients.asana.user'
-const pathWorkspaceOrganization = 'clients.asana.workspace'
-const pathTeam                  = 'clients.asana.team'
-const pathProject               = 'clients.asana.project'
+const pathClientType = 'clients.type'
 
 
 // helpers
-const createAsanaClient = () => {
-  const token = config.get(pathToken)
-  return asana.Client.create()
-    .useAccessToken(token)
-}
-
+// -------------------------------------------------------
 const inquirePromptOverwriteIfSet = (path) => {
   if (!config.has(path)) {
     return Promise.resolve(true)
@@ -37,97 +40,44 @@ const sortObjectsByName = (col) =>
     a.name.toLocaleLowerCase().localeCompare(b.name.toLocaleLowerCase())
   )
 
-
-// questions
-// -------------------------------------------------------
-const promptAsanaToken = {
-  name: 'clientAsanaToken',
-  type: 'input',
-  message: 'What is your asana personal token?',
-}
-
-const promptWorkspace = {
-  name: 'clientAsanaWorkspace',
+// findAll only first
+const createResourceListPrompt = (message, resource, method, getParamsFn) => ({
   type: 'list',
-  message: 'Which workspace do you want to use?',
+  message,
   choices: () => {
-    // create asana client
-    const client = createAsanaClient()
-
-    // request all workspaces
-    return client.workspaces.findAll()
-      .then((workspaces) => {
-        return sortObjectsByName(workspaces.data)
-          .map((ws) => ({ name: ws.name, value: ws.id }))
-      })
-      .catch((error) => {
-        throw error
-      })
-  },
-}
-
-const promptTeam = {
-  name: 'clientAsanaTeam',
-  type: 'list',
-  message: 'Which team would you like to use?',
-  choices: () => {
-    // create asana client
-    const client = createAsanaClient()
-
-    // request all workspaces
-    // TODO: ensure that workspace is organization at this point
-    return client.teams.findByOrganization(config.get(pathWorkspaceOrganization))
-      .then((teams) =>
-        sortObjectsByName(teams.data)
-          .map((ws) => ({ name: ws.name, value: ws.id }))
-      )
-      .catch((error) => {
-        throw error
-      })
-  },
-}
-
-const promptProject = {
-  name: 'clientAsanaProject',
-  type: 'list',
-  message: 'Which project would you like to use?',
-  choices: () => {
-    const client = createAsanaClient()
-
-    const params = {
-      workspace: config.get(pathWorkspaceOrganization),
-      team: config.get(pathTeam),
+    let params
+    let resourceMethod = 'findAll'
+    if (getParamsFn && typeof getParamsFn === 'function') {
+      params = getParamsFn()
+    }
+    if (method) {
+      resourceMethod = method
     }
 
-    // request all projects
-    return client.projects.findAll(params)
-      .then((projects) =>
-        sortObjectsByName(projects.data)
+    const client = createAsanaClient()
+    return client[resource][resourceMethod](params)
+      .then((res) =>
+        sortObjectsByName(res.data)
           .map((x) => ({ name: x.name, value: x.id }))
       )
+      .catch((error) => {
+        throw error
+      })
   },
+})
+
+function listSections() {
+  const client = createAsanaClient()
+  return client.sections.findByProject(config.get(pathProject))
+    .then((data) => {
+      return data.map((ws) => ({ name: ws.name, value: ws.id }))
+    })
+    .catch((error) => {
+      throw error
+    })
 }
 
-const createNormalizedConfigStructure = (path, prompt) => ({ path, prompt })
-
-const pathClientType = 'clients.type'
-
-const promptClientType = {
-  name: 'clientType',
-  type: 'list',
-  message: 'Which client would you like to use?',
-  choices: [
-    'asana',
-  ],
-}
-
-const configPrompts = {
-  clientType: createNormalizedConfigStructure(pathClientType, promptClientType),
-  token: createNormalizedConfigStructure(pathToken, promptAsanaToken),
-  workspace: createNormalizedConfigStructure(pathWorkspaceOrganization, promptWorkspace),
-  team: createNormalizedConfigStructure(pathTeam, promptTeam),
-  project: createNormalizedConfigStructure(pathProject, promptProject),
-}
+const createNormalPrompt = (path, prompt) => ({ path, prompt })
 
 const requestValue = async ({ path, prompt }) => {
   try {
@@ -157,6 +107,98 @@ const writeRequestedValue = async (promptPathObject) => {
 const isDifferentFromConfig = (path, value) => config.get(path) !== value
 
 
+// questions
+// -------------------------------------------------------
+const promptClientType = {
+  name: 'clientType',
+  type: 'list',
+  message: 'Which client would you like to use?',
+  choices: [
+    'asana',
+  ],
+}
+
+const promptAsanaToken = {
+  name: 'clientAsanaToken',
+  type: 'input',
+  message: 'What is your asana personal token?',
+}
+
+const promptWorkspace = createResourceListPrompt(
+  'Which workspace do you want to use?',
+  'workspaces'
+)
+
+const promptTeam = {
+  name: 'clientAsanaTeam',
+  type: 'list',
+  message: 'Which team would you like to use?',
+  choices: () => {
+    // create asana client
+    const client = createAsanaClient()
+
+    // request all workspaces
+    // TODO: ensure that workspace is organization at this point
+    return client.teams.findByOrganization(config.get(pathWorkspaceOrganization))
+      .then((teams) =>
+        sortObjectsByName(teams.data)
+          .map((ws) => ({ name: ws.name, value: ws.id }))
+      )
+      .catch((error) => {
+        throw error
+      })
+  },
+}
+
+const promptProject = createResourceListPrompt(
+  'Which project would you like to use?',
+  'projects',
+  'findAll',
+  () => ({
+    workspace: config.get(pathWorkspaceOrganization),
+    team: config.get(pathTeam),
+  })
+)
+
+const promptSectionToDo = {
+  type: 'list',
+  message: 'Which section corresponds to your "To Do" list?',
+  choices: listSections,
+}
+
+const promptSectionInProgress = {
+  type: 'list',
+  message: 'Which section corresponds to your "In Progress" list?',
+  choices: listSections,
+}
+
+const promptSectionReadyForProduction = {
+  type: 'list',
+  message: 'Which section corresponds to your "Ready for Production" list?',
+  choices: listSections,
+}
+
+const promptSectionDone = {
+  type: 'list',
+  message: 'Which section corresponds to your "Done" list?',
+  choices: listSections,
+}
+
+const configPrompts = {
+  clientType: createNormalPrompt(pathClientType, promptClientType),
+  token: createNormalPrompt(pathToken, promptAsanaToken),
+  workspace: createNormalPrompt(pathWorkspaceOrganization, promptWorkspace),
+  team: createNormalPrompt(pathTeam, promptTeam),
+  project: createNormalPrompt(pathProject, promptProject),
+  sections: {
+    toDo: createNormalPrompt(pathSectionToDo, promptSectionToDo),
+    inProgress: createNormalPrompt(pathSectionInProgress, promptSectionInProgress),
+    readyForProduction: createNormalPrompt(pathSectionReadyForProduction, promptSectionReadyForProduction),
+    done: createNormalPrompt(pathSectionDone, promptSectionDone),
+  },
+}
+
+
 // command
 // --------------------------------------------------------
 class InitCommand extends Command {
@@ -179,10 +221,14 @@ class InitCommand extends Command {
       await writeRequestedValue(configPrompts.workspace)
       await writeRequestedValue(configPrompts.team)
       await writeRequestedValue(configPrompts.project)
+      await writeRequestedValue(configPrompts.sections.toDo)
+      await writeRequestedValue(configPrompts.sections.inProgress)
+      await writeRequestedValue(configPrompts.sections.readyForProduction)
+      await writeRequestedValue(configPrompts.sections.done)
     } catch (error) {
       this.error(error, { exit: 1 })
     } finally {
-      this.log(config.all)
+      this.log(prettyjson.render(config.all))
     }
   }
 }

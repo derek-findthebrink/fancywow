@@ -31,6 +31,8 @@ USAGE
 * [`fancywow hello`](#fancywow-hello)
 * [`fancywow help [COMMAND]`](#fancywow-help-command)
 * [`fancywow init`](#fancywow-init)
+* [`fancywow tasks`](#fancywow-tasks)
+* [`fancywow wow`](#fancywow-wow)
 
 ## `fancywow hello`
 
@@ -66,11 +68,41 @@ _See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v2.1.2
 
 ## `fancywow init`
 
-Describe the command here
+Initialize fancywow
 
 ```
 USAGE
   $ fancywow init
+
+DESCRIPTION
+  ...
+  Set your task provider credentials and project!
+```
+
+_See code: [src/commands/init.js](https://github.com/derek-findthebrink/fancywow/blob/v0.0.0/src/commands/init.js)_
+
+## `fancywow tasks`
+
+Describe the command here
+
+```
+USAGE
+  $ fancywow tasks
+
+DESCRIPTION
+  ...
+  Extra documentation goes here
+```
+
+_See code: [src/commands/tasks.js](https://github.com/derek-findthebrink/fancywow/blob/v0.0.0/src/commands/tasks.js)_
+
+## `fancywow wow`
+
+Describe the command here
+
+```
+USAGE
+  $ fancywow wow
 
 OPTIONS
   -n, --name=name  name to print
@@ -80,5 +112,5 @@ DESCRIPTION
   Extra documentation goes here
 ```
 
-_See code: [src/commands/init.js](https://github.com/derek-findthebrink/fancywow/blob/v0.0.0/src/commands/init.js)_
+_See code: [src/commands/wow.js](https://github.com/derek-findthebrink/fancywow/blob/v0.0.0/src/commands/wow.js)_
 <!-- commandsstop -->

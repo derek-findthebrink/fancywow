@@ -3,10 +3,40 @@
   "description": "integrate your tasks and pull requests",
   "version": "0.0.0",
   "author": "Derek @derek-findthebrink",
+  "main": "src/index.js",
   "bin": {
     "fancywow": "./bin/run"
   },
+  "license": "MIT",
+  "scripts": {
+    "postpack": "rm -f oclif.manifest.json npm-shrinkwrap.json",
+    "posttest": "eslint .",
+    "prepack": "oclif-dev manifest && oclif-dev readme && npm shrinkwrap",
+    "test": "nyc mocha --forbid-only \"test/**/*.test.js\"",
+    "version": "oclif-dev readme && git add README.md"
+  },
+  "files": [
+    "/bin",
+    "/npm-shrinkwrap.json",
+    "/oclif.manifest.json",
+    "/src"
+  ],
+  "repository": "derek-findthebrink/fancywow",
+  "homepage": "https://github.com/derek-findthebrink/fancywow",
   "bugs": "https://github.com/derek-findthebrink/fancywow/issues",
+  "engines": {
+    "node": ">=8.0.0"
+  },
+  "keywords": [
+    "oclif"
+  ],
+  "oclif": {
+    "commands": "./src/commands",
+    "bin": "fancywow",
+    "plugins": [
+      "@oclif/plugin-help"
+    ]
+  },
   "dependencies": {
     "@oclif/command": "^1",
     "@oclif/config": "^1",
@@ -14,7 +44,8 @@
     "asana": "^0.16.1",
     "configstore": "^4.0.0",
     "inquirer": "^6.2.0",
-    "lodash": "^4.17.11"
+    "lodash": "^4.17.11",
+    "prettyjson": "^1.2.1"
   },
   "devDependencies": {
     "@oclif/dev-cli": "^1",
@@ -26,35 +57,5 @@
     "mocha": "^5",
     "nodemon": "^1.18.4",
     "nyc": "^13"
-  },
-  "engines": {
-    "node": ">=8.0.0"
-  },
-  "files": [
-    "/bin",
-    "/npm-shrinkwrap.json",
-    "/oclif.manifest.json",
-    "/src"
-  ],
-  "homepage": "https://github.com/derek-findthebrink/fancywow",
-  "keywords": [
-    "oclif"
-  ],
-  "license": "MIT",
-  "main": "src/index.js",
-  "oclif": {
-    "commands": "./src/commands",
-    "bin": "fancywow",
-    "plugins": [
-      "@oclif/plugin-help"
-    ]
-  },
-  "repository": "derek-findthebrink/fancywow",
-  "scripts": {
-    "postpack": "rm -f oclif.manifest.json npm-shrinkwrap.json",
-    "posttest": "eslint .",
-    "prepack": "oclif-dev manifest && oclif-dev readme && npm shrinkwrap",
-    "test": "nyc mocha --forbid-only \"test/**/*.test.js\"",
-    "version": "oclif-dev readme && git add README.md"
   }
 }
