@@ -13,9 +13,10 @@ class TasksCommand extends Command {
       if (flags.list) {
         if (flags.todo) {
           const tasks = await this.getToDoTasks()
-          this.log(prettyjson.render(list(tasks)))
+          return this.log(prettyjson.render(list(tasks)))
         }
       }
+      // no flags passed?
       this.log('Nothing to do!')
     } catch (error) {
       this.error(error, { exit: 1 })
@@ -38,7 +39,7 @@ Extra documentation goes here
 `
 
 TasksCommand.flags = {
-  list: flags.boolean({ char: 'l', description: 'List tasks'}),
+  list: flags.boolean({ char: 'l', description: 'List tasks' }),
   todo: flags.boolean({ char: 't', description: 'to do items only' }),
 }
 

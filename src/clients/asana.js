@@ -29,17 +29,20 @@ class Client {
     try {
       /* eslint-disable camelcase */
       const params = {
-        section: config.get(pathSectionToDo),
-        opt_fields: 'name,assignee',
+        'assignee.any': `${config.get(pathUser)}`,
+        'sections.any': `${config.get(pathSectionToDo)}`,
+        completed: false,
+        opt_fields: 'name',
       }
       /* eslint-enable */
-      const myId = config.get(pathUser)
 
-      const { data } = await this.asana.tasks.findAll(params)
+      const workspace = config.get(pathWorkspaceOrganization)
+      const { data } = await this.asana.tasks.search(workspace, params)
 
       // return my assigned tasks
-      return data.filter((x) => get(x, 'assignee.id') === myId)
+      return data
     } catch (error) {
+      // TODO: create error generation function for asana
       throw error
     }
   }

@@ -138,7 +138,6 @@ const promptTeam = {
     const client = createAsanaClient()
 
     // request all workspaces
-    // TODO: ensure that workspace is organization at this point
     return client.teams.findByOrganization(config.get(pathWorkspaceOrganization))
       .then((teams) =>
         sortObjectsByName(teams.data)
